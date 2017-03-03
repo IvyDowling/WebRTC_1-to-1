@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>webrtc one to one calls</title>
+</head>
+
+<body>
+    <div id="videos">
+        <video id="localVideo" autoplay muted></video>
+        <video id="remoteVideo" autoplay></video>
+    </div>
+
+    <input id="callfieldId" type="text" />
+    <button id="callbuttonId">call</button>
+    <button id="hangupbuttonId">hang up</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/lib/adapter.js"></script>
+    <script src="js/main.js"></script>
+    <script src="jquery-3.1.1.min.js"></script>
+</body>
+
+</html>
