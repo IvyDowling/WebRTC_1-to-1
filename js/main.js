@@ -142,7 +142,7 @@ socket.on('message', function(message) {
         }
     } else if (message.type.type === 'answer' && running) {
         pc.setRemoteDescription(new RTCSessionDescription(message.type));
-    } else if (message.type === 'candidate' && running) {
+    } else if (message.type.type === 'candidate' && running) {
         var candidate = new RTCIceCandidate({
             sdpMLineIndex: message.type.label,
             candidate: message.type.candidate
