@@ -25,14 +25,14 @@ io.sockets.on('connection', function(client) {
     }
 
     function inMyRoom() {
-        var residents = localRooms[client.rooms[0]];
-        if (residents.length > 1) {
-            for (var c = 0; c < residents.length; c++) {
-                if (residents[c] === client.id) {
-                    residents.splice(c, 1);
-                }
+        var residents = Object.keys(io.sockets.connected[client.id].nsp.connected);
+        for (var r = 0; r < residents.length; r++) {
+            if (residents[r] === client.id) {
+                residents.splice(r, 1);
             }
         }
+        console.log(residents);
+        return residents;
     }
 
     client.on('message', function(message) {
@@ -99,7 +99,7 @@ io.sockets.on('connection', function(client) {
                     client.join(room, function() {
                         console.log("JOIN-ROOM-CALLBACK: client: " + client.id + "has joined room " + room);
                         log('Client ID ' + client.id + ' joined clientId ' + room);
-                        io.sockets.in(room).emit('join', room);
+                        io.sockets.in(room).emit('join', inMyRoom());
                         client.emit('joined', room, client.id);
                         io.sockets.in(room).emit('ready');
                     });

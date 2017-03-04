@@ -24,6 +24,7 @@ console.log("USER ID: " + clientId);
 var socket = io.connect();
 // when the tab is closed, do the stop function
 window.onbeforeunload = stop;
+//set on click
 if ($("#callbuttonId").length > 0) {
     $("#callbuttonId").click(function() {
         if ($("#callfieldId").length > 0) {
@@ -60,6 +61,13 @@ if (clientId !== '') {
     console.log('Attempted to create room: ', clientId);
 }
 
+//client
+function sendSocketMessage(message) {
+    console.log('Client sending message: ', message);
+    socket.emit('message', message);
+}
+
+// socket receives
 socket.on('created', function(room) {
     console.log('Created clientId ' + room);
     owner = true;
@@ -69,9 +77,8 @@ socket.on('full', function(room) {
     console.log('Room ' + room + ' is full');
 });
 
-socket.on('join', function(room) {
-    console.log('Another peer made a request to join room ' + room);
-    console.log('Sending answer to peer.');
+socket.on('join', function(joined) {
+    console.log('Peer: ' + joined + " is attempting to join your room.");
     pc.createAnswer().then(
         setLocalAndsendSocketMessage,
         function(error) {
@@ -89,13 +96,6 @@ socket.on('log', function(array) {
     console.log.apply(console, array);
 });
 
-//client
-function sendSocketMessage(message) {
-    console.log('Client sending message: ', message);
-    socket.emit('message', message);
-}
-
-// This client receives a message
 socket.on('message', function(message) {
     console.log('Server says::', message);
     if (message === 'got user media') {
@@ -184,7 +184,6 @@ navigator.mediaDevices.getUserMedia({
     });
 
 //PEER CONNECTION
-
 function createPeerConnection() {
     try {
         pc = new RTCPeerConnection(null);
