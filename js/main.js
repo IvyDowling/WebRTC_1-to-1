@@ -27,7 +27,7 @@ window.onbeforeunload = stop;
 if ($("#callbuttonId").length > 0) {
     $("#callbuttonId").click(function() {
         if ($("#callfieldId").length > 0) {
-            var tocall = $("#callfieldId").value;
+            var tocall = $("#callfieldId").val();
             if (tocall !== null && tocall !== "") {
                 console.log("client attempting to join room: " + tocall);
                 socket.emit('join', tocall);
@@ -38,7 +38,7 @@ if ($("#callbuttonId").length > 0) {
                     running = true;
                     if (owner) {
                         console.log('creating offer for peer');
-                        pc.createOffer(setLocalAndSendMessage,
+                        pc.createOffer(setLocalAndsendSocketMessage,
                             function(event) {
                                 console.log('createOffer() error: ', event);
                             },
@@ -73,7 +73,7 @@ socket.on('join', function(room) {
     console.log('Another peer made a request to join room ' + room);
     console.log('Sending answer to peer.');
     pc.createAnswer().then(
-        setLocalAndSendMessage,
+        setLocalAndsendSocketMessage,
         function(error) {
             console.log('Failed to create session description: ' + error.toString());
         },
@@ -90,8 +90,7 @@ socket.on('log', function(array) {
 });
 
 //client
-
-function sendMessage(message) {
+function sendSocketMessage(message) {
     console.log('Client sending message: ', message);
     socket.emit('message', message);
 }
@@ -106,7 +105,7 @@ socket.on('message', function(message) {
             running = true;
             if (owner) {
                 console.log('creating offer for peer');
-                pc.createOffer(setLocalAndSendMessage,
+                pc.createOffer(setLocalAndsendSocketMessage,
                     function(event) {
                         console.log('createOffer() error: ', event);
                     },
@@ -125,7 +124,7 @@ socket.on('message', function(message) {
                 running = true;
                 if (owner) {
                     console.log('creating offer for peer');
-                    pc.createOffer(setLocalAndSendMessage,
+                    pc.createOffer(setLocalAndsendSocketMessage,
                         function(event) {
                             console.log('createOffer() error: ', event);
                         },
@@ -136,7 +135,7 @@ socket.on('message', function(message) {
             pc.setRemoteDescription(new RTCSessionDescription(message));
             console.log('Sending answer to peer.');
             pc.createAnswer().then(
-                setLocalAndSendMessage,
+                setLocalAndsendSocketMessage,
                 function(error) {
                     console.log('Failed to create session description: ' + error.toString());
                 },
@@ -163,17 +162,16 @@ navigator.mediaDevices.getUserMedia({
         video: true
     })
     .then(function(stream) {
-        var localVideo = document.querySelector('#localVideo');
-        localVideo.src = window.URL.createObjectURL(stream);
+        $('#localVideo').attr("src", window.URL.createObjectURL(stream));
         localStream = stream;
-        sendMessage('got user media');
+        sendSocketMessage('got user media');
         if (owner && !running && typeof localStream !== 'undefined') {
             createPeerConnection();
             pc.addStream(localStream);
             running = true;
             if (owner) {
                 console.log('creating offer for peer');
-                pc.createOffer(setLocalAndSendMessage,
+                pc.createOffer(setLocalAndsendSocketMessage,
                     function(event) {
                         console.log('createOffer() error: ', event);
                     },
@@ -205,7 +203,7 @@ function createPeerConnection() {
 function handleIceCandidate(event) {
     console.log('icecandidate event: ', event);
     if (event.candidate) {
-        sendMessage({
+        sendSocketMessage({
             type: 'candidate',
             label: event.candidate.sdpMLineIndex,
             id: event.candidate.sdpMid,
@@ -217,22 +215,21 @@ function handleIceCandidate(event) {
 }
 
 function handleRemoteStreamAdded(event) {
-    var remoteVideo = $('#remoteVideo');
+    $('#remoteVideo').attr("src", window.URL.createObjectURL(event.stream));
     console.log('Remote stream added.');
-    remoteVideo.src = window.URL.createObjectURL(event.stream);
     remoteStream = event.stream;
 }
 
-function setLocalAndSendMessage(sessionDescription) {
+function setLocalAndsendSocketMessage(sessionDescription) {
     pc.setLocalDescription(sessionDescription);
-    console.log('setLocalAndSendMessage sending message', sessionDescription);
-    sendMessage(sessionDescription);
+    console.log('setLocalAndsendSocketMessage sending message', sessionDescription);
+    sendSocketMessage(sessionDescription);
 }
 
 function hangup() {
     console.log('Hanging up.');
     stop();
-    sendMessage('bye');
+    sendSocketMessage('bye');
 }
 
 function handleRemoteHangup() {
