@@ -78,7 +78,6 @@ socket.on('full', function(room) {
 });
 
 socket.on('join', function(joined) {
-    console.log('Peer: ' + joined + " is attempting to join your room.");
     pc.createAnswer().then(
         setLocalAndsendSocketMessage,
         function(error) {
@@ -113,12 +112,11 @@ socket.on('message', function(message) {
                 );
             }
         }
-    } else if (message.type === 'offer') {
-        if (confirm("received offer, answer?")) {
+    } else if (message.type.type === 'offer') {
+        if (confirm("Call from " + message.origin)) {
             socket.emit('join', clientId);
-            running = false;
             owner = false;
-            if (!running && typeof localStream !== 'undefined') {
+            if (typeof localStream !== 'undefined') {
                 createPeerConnection();
                 pc.addStream(localStream);
                 running = true;
@@ -132,7 +130,7 @@ socket.on('message', function(message) {
                     );
                 }
             }
-            pc.setRemoteDescription(new RTCSessionDescription(message));
+            pc.setRemoteDescription(new RTCSessionDescription(message.type));
             console.log('Sending answer to peer.');
             pc.createAnswer().then(
                 setLocalAndsendSocketMessage,
@@ -142,12 +140,12 @@ socket.on('message', function(message) {
                 sdpConstraints
             );
         }
-    } else if (message.type === 'answer' && running) {
-        pc.setRemoteDescription(new RTCSessionDescription(message));
+    } else if (message.type.type === 'answer' && running) {
+        pc.setRemoteDescription(new RTCSessionDescription(message.type));
     } else if (message.type === 'candidate' && running) {
         var candidate = new RTCIceCandidate({
-            sdpMLineIndex: message.label,
-            candidate: message.candidate
+            sdpMLineIndex: message.type.label,
+            candidate: message.type.candidate
         });
         pc.addIceCandidate(candidate);
     } else if (message === 'bye' && running) {

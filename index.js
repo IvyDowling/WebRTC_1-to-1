@@ -31,19 +31,19 @@ io.sockets.on('connection', function(client) {
                 residents.splice(r, 1);
             }
         }
-        console.log(residents);
         return residents;
     }
 
     client.on('message', function(message) {
         log("Client, " + client.id + " said:", message);
         // broadcast sends message to everyone besides this socket
+        var signed = { type: message, origin: client.rooms[0]};
         if (client.visitingRoomName !== null) {
             //we're visiting
-            client.broadcast.to(client.visitingRoomName).emit('message', message);
+            client.broadcast.to(client.visitingRoomName).emit('message', signed);
         } else {
             //we're home
-            client.broadcast.to(client.rooms[0]).emit('message', message);
+            client.broadcast.to(client.rooms[0]).emit('message', signed);
         }
     });
 
@@ -99,6 +99,8 @@ io.sockets.on('connection', function(client) {
                     client.join(room, function() {
                         console.log("JOIN-ROOM-CALLBACK: client: " + client.id + "has joined room " + room);
                         log('Client ID ' + client.id + ' joined clientId ' + room);
+                        // emit to everyone on this socket the person who
+                        // just joined, this is for callerid
                         io.sockets.in(room).emit('join', inMyRoom());
                         client.emit('joined', room, client.id);
                         io.sockets.in(room).emit('ready');
