@@ -1,10 +1,10 @@
 'use strict';
 
 var owner = false;
-var isStarted = false;
+var running = false;
 var localStream;
-var pc;
 var remoteStream;
+var pc;
 // thanks google
 var pcConfig = {
     'iceServers': [{
@@ -22,6 +22,8 @@ var sdpConstraints = {
 var clientId = prompt("User ID", "");
 console.log("USER ID: " + clientId);
 var socket = io.connect();
+// when the tab is closed, do the stop function
+window.onbeforeunload = stop;
 if ($("#callbuttonId").length > 0) {
     $("#callbuttonId").click(function() {
         if ($("#callfieldId").length > 0) {
@@ -29,11 +31,11 @@ if ($("#callbuttonId").length > 0) {
             if (tocall !== null && tocall !== "") {
                 console.log("client attempting to join room: " + tocall);
                 socket.emit('join', tocall);
-                isStarted = false;
-                if (!isStarted && typeof localStream !== 'undefined') {
+                running = false;
+                if (!running && typeof localStream !== 'undefined') {
                     createPeerConnection();
                     pc.addStream(localStream);
-                    isStarted = true;
+                    running = true;
                     if (owner) {
                         console.log('creating offer for peer');
                         pc.createOffer(setLocalAndSendMessage,
@@ -87,8 +89,6 @@ socket.on('log', function(array) {
     console.log.apply(console, array);
 });
 
-socket.on('')
-
 //client
 
 function sendMessage(message) {
@@ -100,10 +100,10 @@ function sendMessage(message) {
 socket.on('message', function(message) {
     console.log('Server says::', message);
     if (message === 'got user media') {
-        if (!isStarted && typeof localStream !== 'undefined') {
+        if (!running && typeof localStream !== 'undefined') {
             createPeerConnection();
             pc.addStream(localStream);
-            isStarted = true;
+            running = true;
             if (owner) {
                 console.log('creating offer for peer');
                 pc.createOffer(setLocalAndSendMessage,
@@ -117,12 +117,12 @@ socket.on('message', function(message) {
     } else if (message.type === 'offer') {
         if (confirm("received offer, answer?")) {
             socket.emit('join', clientId);
-            isStarted = false;
+            running = false;
             owner = false;
-            if (!isStarted && typeof localStream !== 'undefined') {
+            if (!running && typeof localStream !== 'undefined') {
                 createPeerConnection();
                 pc.addStream(localStream);
-                isStarted = true;
+                running = true;
                 if (owner) {
                     console.log('creating offer for peer');
                     pc.createOffer(setLocalAndSendMessage,
@@ -143,15 +143,15 @@ socket.on('message', function(message) {
                 sdpConstraints
             );
         }
-    } else if (message.type === 'answer' && isStarted) {
+    } else if (message.type === 'answer' && running) {
         pc.setRemoteDescription(new RTCSessionDescription(message));
-    } else if (message.type === 'candidate' && isStarted) {
+    } else if (message.type === 'candidate' && running) {
         var candidate = new RTCIceCandidate({
             sdpMLineIndex: message.label,
             candidate: message.candidate
         });
         pc.addIceCandidate(candidate);
-    } else if (message === 'bye' && isStarted) {
+    } else if (message === 'bye' && running) {
         handleRemoteHangup();
     }
 });
@@ -167,10 +167,10 @@ navigator.mediaDevices.getUserMedia({
         localVideo.src = window.URL.createObjectURL(stream);
         localStream = stream;
         sendMessage('got user media');
-        if (owner && !isStarted && typeof localStream !== 'undefined') {
+        if (owner && !running && typeof localStream !== 'undefined') {
             createPeerConnection();
             pc.addStream(localStream);
-            isStarted = true;
+            running = true;
             if (owner) {
                 console.log('creating offer for peer');
                 pc.createOffer(setLocalAndSendMessage,
@@ -241,7 +241,7 @@ function handleRemoteHangup() {
 }
 
 function stop() {
-    isStarted = false;
+    running = false;
     owner = true;
     //if room host, will do nothing
     socket.emit("leave", clientId);
@@ -249,4 +249,6 @@ function stop() {
         pc.close();
         pc = null;
     }
+    //need to return null for window.onbeforeunload
+    return null;
 }
