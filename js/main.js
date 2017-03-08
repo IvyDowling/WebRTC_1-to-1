@@ -97,7 +97,7 @@ socket.on('log', function(array) {
 
 socket.on('message', function(message) {
     console.log('Server says::', message);
-    if (message === 'got user media') {
+    if (message.content === 'got user media') {
         if (!running && typeof localStream !== 'undefined') {
             createPeerConnection();
             pc.addStream(localStream);
@@ -112,7 +112,7 @@ socket.on('message', function(message) {
                 );
             }
         }
-    } else if (message.type.type === 'offer') {
+    } else if (message.content.type === 'offer') {
         if (confirm("Call from " + message.origin)) {
             socket.emit('join', clientId);
             owner = false;
@@ -140,15 +140,15 @@ socket.on('message', function(message) {
                 sdpConstraints
             );
         }
-    } else if (message.type.type === 'answer' && running) {
+    } else if (message.content.type === 'answer' && running) {
         pc.setRemoteDescription(new RTCSessionDescription(message.type));
-    } else if (message.type.type === 'candidate' && running) {
+    } else if (message.content.type === 'candidate' && running) {
         var candidate = new RTCIceCandidate({
             sdpMLineIndex: message.type.label,
             candidate: message.type.candidate
         });
         pc.addIceCandidate(candidate);
-    } else if (message === 'bye' && running) {
+    } else if (message.content === 'bye' && running) {
         handleRemoteHangup();
     }
 });

@@ -37,7 +37,7 @@ io.sockets.on('connection', function(client) {
     client.on('message', function(message) {
         log("Client, " + client.id + " said:", message);
         // broadcast sends message to everyone besides this socket
-        var signed = { type: message, origin: client.rooms[0]};
+        var signed = { content: message, origin: client.rooms[0]};
         if (client.visitingRoomName !== null) {
             //we're visiting
             client.broadcast.to(client.visitingRoomName).emit('message', signed);
